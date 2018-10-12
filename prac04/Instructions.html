@@ -1,0 +1,663 @@
+<<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta content="application/xhtml+xml; charset=ISO-8859-1" http-equiv="content-type" />
+  <title>Operating Systems: Practicals</title>
+   <base href="http://homepages.abdn.ac.uk/m.j.kollingbaum/pages/teaching/CS3026/" />
+
+<style>
+table.thin {
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    border-collapse: collapse;
+}
+
+dt {
+    font-weight:	bold;
+}
+
+dd {
+    margin-left:	2em;
+}
+
+h3 {
+    font-size:		1.2em;
+    color:		#ce7019;
+    margin-bottom:	0.6em;
+}
+
+.code {
+    border:		1px solid gray;
+    background-color:	#e2e2e2;
+    padding:		1em;
+    white-space:	nowrap;
+}
+
+img.imgborder {
+    border:		1px solid gray;
+}
+
+pre {
+  border:		1px solid gray;
+  background-color:	#e2e2e2;
+  padding:		5px;
+}
+
+code {
+  font-weight:	bold;
+}
+
+.intext {
+	font-size:		1.0em;
+    background-color:	#e2e2e2;
+}
+</style>
+
+ <link rel="stylesheet" href="level-three.css" type="text/css" media="screen" />
+  <script type="text/javascript" src="niftycube.js"></script>
+  <!-- http://www.html.it/articoli/niftycube/index.html for rounded corners -->
+<script type="text/javascript">
+window.onload=function(){
+Nifty("div#banner, ul#menu", "top same-height");
+}
+</script>
+</head>
+<body>
+	<div id="logoBanner">
+</div>
+<div id="banner">
+<ul id="bannerWords">
+<li class="bannerWordsLeft">CS3026</li>
+<li class="bannerWordsCenter">Operating Systems</li>
+<li class="bannerWordsRight"><a href="http://www.abdn.ac.uk/ncs/departments/computing-science/level-3-291.php">Level 3</a></li></ul>
+<ul id="menu">
+<li><a href="">Home</a></li>
+<li><a href="lectures/">Lectures</a></li>
+<li><a href="practicals/">Practicals</a></li>
+<li><a href="assessment/">Assessment</a></li>
+<li><a href="information/">Information</a></li></ul>
+</div> 
+
+
+<div id="mainContent">
+<p>
+<h1>Practical 4 </h1>
+
+<p class="newsBox">If you are new to C programming or need more information about it, please go to this <a href="practicals/abdn.only/Practical01 C Introduction.shtml">C language primer</a> first</p>
+
+<!--
+<p class="newsBox">For all example C code, you are expected to open an editor and create small example programs that contain the
+code fragments shown here. Compile and run them. The practicals follow the C99 standard (e.g. using the '//' comments)
+and should be compiled with the qualifier '-std=c99'. On the Unix machines in the lab, the program KDevelop4 is
+installed: its editor helps you with code completion and suggests which header files should be included. </p>
+-->
+
+
+<h2>Exercise 4.1 Inter Process Communication</h2>
+
+<p>We will work with IPC facilities, such as messages queues, signals etc.
+
+<h2>Exercise 4.1.1 Pipes</h2>
+
+<p>A private nameless pipe can be created between a parent and a child process. We use <code>fork()</code> to create the child process and establish the pipe: the parent first creates the pipe, then uses <code>fork()</code> to create the child process, which then has to connect to the pipe as well. The system call <code>pipe()</code> is used to create the pipe, it is called with an integer array of length 2 that holds the file descriptors for both ends of the pipe.</p>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;unistd.h&gt;
+
+int main()
+{
+   pid_t pid ;
+
+   //for the pipe
+   int pipe_fd_array[2] ;
+   char pipe_buffer[30] ;
+
+   printf ( "Start parent process : %d\n", getpid() ) ;
+
+   pid = fork() ;
+
+   if ( pid > 0 )
+   {
+      // parent
+      printf ( "This is the parent : %d, starting child %d\n", getpid(), pid ) ;
+
+      // the parent reads from the pipe (we use the file descriptor in
+      // array element 0):
+      printf ( "Parent, waiting for child ... \n") ;
+      read   ( pipe_fd_array[[0], pipe_buffer, 11);
+      printf ( "Parent, received from child: %s\n", pipe_buffer ) ;
+
+      // we can make the parent wait for the child to finish
+      // int status ;
+      // child = waitpid ( pid, &status, 0) ;
+   }
+   else if ( pid == 0 )
+   {
+      printf ( "This is the child : %d\n", getpid() ) ;
+
+      printf ( "   Child: writing to the pipe\n" );
+      write  ( pipe_fd_array[1], "I am alive", 11 );  // don't forget to count 
+                                                      // the '\0' at the end
+      printf ( "   Child: exiting\n" );
+      exit(0);
+   }
+   else
+   {
+      printf ( "Some error occurred\n" );
+   }
+   return 0 ;
+}
+</pre>
+
+<h2>Exercise 4.1.2 Message Queues, Sender and Receiver</h2>
+
+<p>Unix / Linux provides the system calls <code>msgsnd()</code> and <code>msgrcv()</code> to establish
+a communciation between processes via messages queues.</p>
+<p>Message queues are managed by the kernel. There are limitations upon the size of a message (max), the
+total number of messages (mni) and the total size of all messages in the queue (mnb),
+we can check that with the following command:</p>
+
+<p class="sourceContent">
+<code><b>
+$ sysctl kernel.msg{max,mni,mnb}<br>
+kernel.msgmax = 8192<br>
+kernel.msgmni = 1655<br>
+kernel.msgmnb = 16384<br>
+</b></code>
+</p>
+
+<p>
+First, we look at a a simple communication between a sender and a receiver. Messages queues
+can be either created from within a program with the system call <code>msgget()</code> or
+with the command <code>ipcmk</code> (inter process communication make). Type the following
+at the command prompt to create a message queue:
+</p>
+
+<p class="sourceContent">
+<code><b>
+$ ipcmk -Q
+</b></code>
+</p>
+
+<p>
+Check what queue you have created, in particular, what its ID is:
+</p>
+
+<p class="sourceContent">
+<code><b>
+$ ipcs -q<br>
+<br>
+------ Message Queues --------<br>
+key        msqid      owner      perms      used-bytes   messages    <br>
+0x33ec1686 65536      user       644        0            0 <br>
+</b></code>
+</p>
+
+<p>
+The message queue ID (<code>msqid</code>) is <code>65536</code>. This number is important
+for the next step in this exercise. We will create a sender and a receiver:
+</p>
+
+
+<pre>
+// this is msg_send.c
+//
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/msg.h&gt;
+
+#define MSGSIZE 256
+
+int main ( int argc, char ** argv )
+{
+   int msqid = 0 ;
+
+   // get message queue id from command line
+   if ( argc > 1 ) msqid = atoi ( argv[1] ) ;
+   else
+   {
+      fprintf ( stderr, "no msqid specified\n" ) ;
+      exit ( -1 ) ;
+   }
+
+   // the system call msgsnd() requires us to declare a structure
+   // with two elements
+   //    long mtype        a long variable that can be used as a message type
+   //    char mtext[n]     a character array for the message string of length n
+   struct message
+   {
+      long mtype ;
+      char mtext [ MSGSIZE ] ;
+   } msg ;
+
+   // we specify some arbitrary message type, msgrcv() can select messages from the
+   // message queue according to this value
+
+   msg.mtype = 99 ;
+   
+   // we put some message into mtext
+
+   sprintf ( msg.mtext, "%s", "This is Message 99" ) ;
+
+   // the system call msgsnd() has the following signature:
+   // int msgsnd ( int id, const void *msg, size_t size, int flags)
+   //   msg is a pointer to the message structure, containing mtype and mtext
+   //   size is only the size of mtext (mtype is not counted)
+   //   flags can be either 0 or IPC_NOWAIT
+
+   // the msgsnd() call adds a message to the message queue
+
+   int retval = msgsnd ( msqid, (void *) &msg, sizeof ( msg.mgext ), IPC_NOWAIT ) ;
+
+   return 0 ;
+}
+</pre>
+
+<p>Compile this with:</p>
+
+<p class="sourceContent">
+<code><b>
+$ gcc -o msg_send msg_send.c
+</b></code>
+</p>
+
+<p>Write the receiver:</p>
+
+
+<pre>
+// this is msg_receive.c
+//
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/msg.h&gt;
+
+#define MSGSIZE 256
+
+int main ( int argc, char ** argv )
+{
+   int msqid = 0 ;
+
+   // get message queue id from command line
+   if ( argc > 1 ) msqid = atoi ( argv[1] ) ;
+   else
+   {
+      fprintf ( stderr, "no msqid specified\n" ) ;
+      exit ( -1 ) ;
+   }
+
+   // the system call msgrcv() requires us to declare a structure
+   // with two elements
+   //    long mtype        a long variable that can be used as a message type
+   //    char mtext[n]     a character array for the message string of length n
+   struct message
+   {
+      long mtype ;
+      char mtext [ MSGSIZE ] ;
+   } msg ;
+
+   // the system call msgrcv() has the following signature:
+   // ssize_t msgrcv ( int id, void *msg, size_t size, long mtype, int flags)
+   //   msg is a pointer to the message structure, containing mtype and mtext
+   //   size is only the size of mtext (mtype is not counted)
+   //   if mtype == 0, then the first message in the queue is read
+   //   if mtype > 0, then the first message of type mtype will be read, except
+   //                 if flags == MSG_EXCEPT, then first message except those of type mtype are read
+   //   
+   //   flags can be either 0 or IPC_NOWAIT or MSG_EXCEPT or MSG_NOERROR
+
+   // the msgrcv() call removes a message from the message queue
+
+   // we read all messages: mtype = 0
+
+   int mtype = 0 ;
+
+   ssize_t retval = msgrcv ( msqid, (void *) &msg, sizeof ( msg.mgext ), mtype, IPC_NOWAIT | MSG_NOERROR ) ;
+
+   if ( retval > -1 ) printf ( "Received message [size: %d]: %s\n", retval, msg.mtext ) ;
+   else
+   {
+      fprintf ( stderr, "something is wrong\n" ) ;
+      exit ( -1 ) ;
+   }
+
+   return 0 ;
+}
+</pre>
+
+
+<p>Run the sender:</p>
+
+<p class="sourceContent">
+<code><b>
+$ ./msg_send 65536
+</b></code>
+</p>
+
+<p>Check the message queue, whether there is a message added to it</p>
+
+<p class="sourceContent">
+<code><b>
+$ ipcs -q<br>
+<br>
+------ Message Queues --------<br>
+key        msqid      owner      perms      used-bytes   messages    <br>
+0x33ec1686 65536      user       644        256          1 <br>
+</b></code>
+</p>
+
+<p>Run the receiver:</p>
+
+<p class="sourceContent">
+<code><b>
+$ ./msg_receive 65536<br>
+Received message [size: 256]: This is Message 99
+</b></code>
+</p>
+
+<p>Check the message queue, whether the message has been removed</p>
+
+<p class="sourceContent">
+<code><b>
+$ ipcs -q<br>
+<br>
+------ Message Queues --------<br>
+key        msqid      owner      perms      used-bytes   messages    <br>
+0x33ec1686 65536      user       644        0            0 <br>
+</b></code>
+</p>
+
+<p>Remove the message queue:</p>
+
+<p class="sourceContent">
+<code><b>
+$ ipcrm -q 65536
+</b></code>
+</p>
+
+<h4>Exercise 4.1.3 Message Queues, Client and Server</h4>
+Implement two programs, a server and a client
+<p>
+The server should set up the message queue at the beginning with the system call <code>msgget()</code>
+and remove it before ending its execution (and also in error cases).
+</p>
+<p>
+Find descriptions of <code>msgsnd()</code> and <code>msgrcv()</code> <a href="http://linux.die.net/man/2/msgsnd">here</a>
+and <a href="http://linux.die.net/man/2/msgrcv">here</a>.
+</p>
+
+<h4>Server</h4>
+<p>
+Here is an example, how the server creates and removes a message queue. The system call <code>msgget()</code>
+requires two parameters, (a) a unique "key" (which is shown, if you type <code>ipcs -q</code> and (b)
+a flag that determines the access rights:
+</p>
+
+<pre>
+// this is server.c
+//
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/msg.h&gt;
+
+int main()
+{
+   int   msqid =  0 ;
+   key_t key   = 10 ;       // key should be a unique identifier, it can be
+                            // derived by using the ftok() function, which
+                            // generates a system-wide unique key from a file name plus
+                            // some arbitrary number:
+                            //     key_t key = ftok ( "/some/path/to/file", 99 ) ;
+                            // in this example, we simply use some arbitrary integer value
+                            // as key
+                            // the same key has to be used on both server and client side
+                            // to "get" the same message queue
+
+   msqid = msgget ( key, IPC_CREAT | 0644 ) ;
+   printf ( "Message queue create with id %d\n", msqid ) ;
+
+   while ( TRUE )
+   {
+      // wait for incoming messages
+      // see above receiver example
+      // use msgrcv() in blocking fashion (don't specify IPC_NOWAIT)
+
+      // ===============================================
+      // here the server is (hopefully) doing something useful ...
+      // ===============================================
+
+      // send back message
+      // see above sender example
+      // use msgsnd()
+   }
+
+   // we use msgctl() to remove the queue
+   if ( msgctl ( msqid, IPC_RMID, NULL ) < 0 )
+   {
+      printf ( "cannot remove message queue" ) ;
+      exit ( -1) ;
+   }
+}
+</pre>
+
+
+<p>
+The purpose of the server is to echo back any message received from a client, but changed to
+uppercase. The server should perform a blocking receive. As soon as it has received a message,
+it will transform the message into a version with all letters transformed to uppercase and
+send it back to the client. The server will operate within an endless loop.
+</p>
+The server operates with two types of messages: a client message (the message it receives)
+and a server message (the message it sends back). We use <code>mtype</code> to distinguish
+both. Choose a message type for the server (I suggest 0) and a different one for the client
+message (something > 0). The server will call <code>msgrcv()</code> with this client message type.
+
+<h4>Client</h4>
+Create a client, that uses <code>msgget()</code> with the same key (<code>key_t key</code>) as the server to connect to the
+same message queue. Please note the specifics regarding this key as outlined in the comments section below.
+<p>
+Here is a pseudocode what the client should do:
+
+<pre>
+Client:
+begin
+   get message queue id with key ;
+   while TRUE
+      message = read message from terminal ;
+      msgsnd ( message ) ;
+      server_response = msgrcv() ;
+      print out server_response ;
+   endwhile
+end
+</pre>
+
+The client should allow the user to type in a message and subsequently send
+it to the server. It will send the message with the message type you choose for a client message.
+It has to wait in the <code>msgrcv()</code> for a server message. After receiving the server
+message, the client should print it out.
+</p>
+<p>
+In order to read from stdin, use <code>scanf ( stdin, ... )</code>.
+</p>
+The following code fragment shows the use of the shared <code>key</code>, used by both server and client
+to find the message queue in the system:
+
+<pre>
+// this is client.c
+//
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/msg.h&gt;
+
+int main()
+{
+   int   msqid =  0 ;
+   key_t key   = 10 ;       // key should be a unique identifier, it can be
+                            // derived by using the ftok() function, which
+                            // generates a system-wide unique key from a file name plus
+                            // some arbitrary number:
+                            //     key_t key = ftok ( "/some/path/to/file", 99 ) ;
+                            // in this example, we simply use some arbitrary integer value
+                            // as key
+                            // the same key has to be used on both server and client side
+                            // to "get" the same message queue
+
+   // do the client implementation
+}
+</pre>
+
+
+
+
+
+<p>
+Start the server in one window, start the client in another window.
+
+<h4>Exercise 4.2 Trapping Signals</h4>
+If the server runs as an endless loop, it can only be stopped / ended by typing CONTROL-C
+from the command line (if it runs as a foreground process). If you terminate the server
+wit CONTROL-C, the message queue will not be removed. You can either remove it manually
+from the command line, as shown above, or implement a signal trap in your program
+that reacts to CONTROL-C and removes the queue fore ending the program
+<p>
+For this, the program has
+to trap such as signal. A function has to be implemented that can be called in case such
+a signal is trapped. Here is an example how to use that:</p>
+
+
+<pre>
+// this is trapcntlc.c
+//
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+
+
+void sig_handler(int signo)
+{
+   if (signo == SIGINT)
+      printf("received SIGINT\n");
+}
+
+int main(void)
+{
+   if (signal(SIGINT, sig_handler) == SIG_ERR)
+   printf("\ncan't catch SIGINT\n");
+   // A long long wait so that we can easily issue a signal to this process
+   while(1) 
+      sleep(1);
+   return 0;
+}
+</pre>
+
+<p>
+Here is a more elaborate example, in particular how a parent process
+can send signals to a child process, using <code>kill()</code>:</p>
+
+
+<pre>
+
+/* sig_talk.c --- Example of how 2 processes can talk */
+/* to each other using kill() and signal() */
+/* We will fork() 2 process and let the parent send a few */
+/* signals to it`s child  */
+
+/* gcc sig_talk.c -o sig_talk  */
+
+#include &lt;stdio.h&gt;
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+
+void sighup(); /* routines child will call upon sigtrap */
+void sigint();
+void sigquit();
+
+main()
+{
+   int pid;
+
+   /* get child process */
+  
+   if ((pid = fork()) < 0)
+   {
+        perror("fork");
+        exit(1);
+   }
+    
+   if (pid == 0)
+   { /* child */
+       signal(SIGHUP,sighup); /* set function calls */
+       signal(SIGINT,sigint);
+       signal(SIGQUIT, sigquit);
+       for(;;); /* loop for ever */
+   }
+   else /* parent */
+   {  /* pid hold id of child */
+       printf("\nPARENT: sending SIGHUP\n\n");
+       kill(pid,SIGHUP);
+       sleep(3); /* pause for 3 secs */
+       printf("\nPARENT: sending SIGINT\n\n");
+       kill(pid,SIGINT);
+       sleep(3); /* pause for 3 secs */
+       printf("\nPARENT: sending SIGQUIT\n\n");
+       kill(pid,SIGQUIT);
+       sleep(3);
+   }
+}
+
+void sighup()
+{  
+   signal(SIGHUP,sighup); /* reset signal */
+   printf("CHILD: I have received a SIGHUP\n");
+}
+
+void sigint()
+{  
+   signal(SIGINT,sigint); /* reset signal */
+   printf("CHILD: I have received a SIGINT\n");
+}
+
+void sigquit()
+{ 
+   printf("I am Dead!!!\n");
+   exit(0);
+}
+</pre>
+
+
+<h2>Exercise 4.3 Message Queues, Multiple Clients and one Server</h2>
+<p>
+Implement a server that can serve multiple clients at the same time. Three
+options:
+<ul>
+<li>introduce message identifications that represent a client id and which the 
+server can use to distinguish between clients
+<li>spawn a separate server process for each new client, the original spawning
+server is taking on the role of a "listener" for connection requests of new clients
+<li>use POSIX threads to implement a multi-threaded server
+</ul>
+</p>
+
+</div>
+
+<div id="footer"> 
+<p>You can obtain a <a href="/cgi-bin/betsie.pl">text only version</a> 
+of this page by following the link.</p>
+<p>
+<a href="">Home</a> 
+| <a href="lectures/">Lectures</a> 
+| <a href="practicals/">Practicals</a> 
+| <a href="assessment/">Assessment</a> 
+| <a href="information/">Information</a></p>
+<p>
+<a href="http://www.abdn.ac.uk/">
+<img src="http://www.csd.abdn.ac.uk/images/university/logo.gif" alt="University of Aberdeen logo" />
+</a></p>
+</div>
+
+
+</body>
+</HTML>
