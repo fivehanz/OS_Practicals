@@ -1,0 +1,2070 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta content="application/xhtml+xml; charset=ISO-8859-1" http-equiv="content-type" />
+  <title>Operating Systems: Practicals</title>
+   <base href="http://homepages.abdn.ac.uk/m.j.kollingbaum/pages/teaching/CS3026/" />
+
+<style>
+table.thin {
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    border-collapse: collapse;
+}
+
+dt {
+    font-weight:	bold;
+}
+
+dd {
+    margin-left:	2em;
+}
+
+h3 {
+    font-size:		1.2em;
+    color:		#ce7019;
+    margin-bottom:	0.6em;
+}
+
+.code {
+    border:		1px solid gray;
+    background-color:	#e2e2e2;
+    padding:		1em;
+    white-space:	nowrap;
+}
+
+img.imgborder {
+    border:		1px solid gray;
+}
+
+pre {
+  border:		1px solid gray;
+  background-color:	#e2e2e2;
+  padding:		5px;
+}
+
+code {
+  font-weight:	bold;
+}
+
+.intext {
+	font-size:		1.0em;
+    background-color:	#e2e2e2;
+}
+</style>
+
+ <link rel="stylesheet" href="level-three.css" type="text/css" media="screen" />
+  <script type="text/javascript" src="niftycube.js"></script>
+  <!-- http://www.html.it/articoli/niftycube/index.html for rounded corners -->
+<script type="text/javascript">
+window.onload=function(){
+Nifty("div#banner, ul#menu", "top same-height");
+}
+</script>
+</head>
+<body>
+	<div id="logoBanner">
+</div>
+<div id="banner">
+<ul id="bannerWords">
+<li class="bannerWordsLeft">CS3026</li>
+<li class="bannerWordsCenter">Operating Systems</li>
+<li class="bannerWordsRight"><a href="http://www.abdn.ac.uk/ncs/departments/computing-science/level-3-291.php">Level 3</a></li></ul>
+<ul id="menu">
+<li><a href="">Home</a></li>
+<li><a href="lectures/">Lectures</a></li>
+<li><a href="practicals/">Practicals</a></li>
+<li><a href="assessment/">Assessment</a></li>
+<li><a href="information/">Information</a></li></ul>
+</div> 
+
+
+<div id="mainContent">
+<p>
+<h1>Practical 2 </h1>
+
+<p>
+Introductory material for programming in C can be found under the following links:
+<ul>
+<li><a href="http://www.tutorialspoint.com/cprogramming/cprogramming_tutorial.pdf">http://www.tutorialspoint.com/cprogramming/cprogramming_tutorial.pdf</a></li>
+</ul>
+If you do not have experience with Unix / Linux, study first basic concepts outlined in the Unix shell primer: follow
+<a href="practicals/abdn.only/Practical01 Shell Primer.shtml">this link</a>
+</p>
+
+<!--
+<p class="newsBox">
+Please note that we will follow the C99 standard for the C language. When using
+language constructs specific to this standard, please add "-std=c99" as a compiler switch
+</p>
+-->
+
+<h2>Exercise 3</h2>
+
+<h3>Multiple Files</h3>
+
+A C program may consist of multiple files. Each file containing C code is regarded as a module containing information about data structures, functions, pre-compiler directives and variables. It is common practice to collect precompiler directives,
+structures and function prototypes into header files, keeping it separate from the implementation of functions. In order
+to build a complete application, the C compiler operates in three steps:
+
+<ul>
+<li>Calling the pre-compiler to resolve any pre-compiler directives: this is a text replacement exercise, where
+the pre-compiler replaces the pre-compiler macros throughout your C code with the corresponding defined texts </li>
+<li>Compiling each file containing C code and generating an object file for each of them, with an extension '.o'</li>
+<li>Linking all the object files and objects contained in libraries</li>
+</ul>
+<p>So far, we haven't seen the generation of object files, as the gcc compiler takes a shortcut to create
+an executable. We can enforce the generation of objects explicitly:
+
+<p class="sourceContent">
+<code><b>$ gcc -c hello.c<br>
+$ gcc -o hello hello.o<br>
+$ ./hello<br>
+Hello world!
+</b></code>
+</p>
+<p>This also allows us to explicity name our application.</p>
+
+<h4>Example 3.1</h4>
+<p>Let's look at the following example:</p>
+<pre>
+#include &lt;stdio.h&gt;
+
+typedef struct {
+  int id_number;
+  int age;
+  float salary;
+} DataEntry;
+
+void initialize ( DataEntry * ) ;
+
+int main()
+{
+
+   DataEntry employeeList[100] ;
+   
+   /* call initializer */
+   initialize ( employeeList ) ;
+
+   printf ( "Employee :\n\tID = %d\n\tAge = %d\n\tSalary = %f\n",
+      employeeList[0].id_number,
+	  employeeList[0].age,
+	  employeeList[0].salary
+   ) ;
+}
+
+void initialize ( DataEntry * person )
+{
+   printf ( "Specify details:\n" ) ;
+   printf ( "ID     : " ); scanf ( "%d", &(person->id_number) ) ;
+   printf ( "Age    : " ); scanf ( "%d", &(person->age) ) ;
+   printf ( "Salary : " ); scanf ( "%f", &(person->salary) ) ;
+}
+</pre>
+<p>Note the particulars of this example: Why are we using "employeeList" as the parameter for
+"initialize()" and not "employeeList[0]", which would be the first employee record in our
+list? ANSWER: initialize returns values to main(), therefore in a call-by-reference fashion,
+we have to provide a pointer to an employee record: "employeeList" is already a pointer
+to the first list element. QUESTION: what do we have to do, if we want to fill the complete
+list of records?</p>
+
+<p>We take this example as an exercise how to separate a program into different modules.
+First, we create a header file "employee.h"</p>
+
+<pre>
+#ifndef EMPLOYEE_H
+#define EMLOYEE_H
+
+typedef struct {
+  int id_number;
+  int age;
+  float salary;
+} DataEntry;
+
+void initialize ( DataEntry * ) ;
+
+#endif
+</pre>
+<p>Note the use of the pre-compiler 'ifndef', testing a macro 'EMLOYEE_H' and
+the subsequent '#define' of this macro: this is common practice to avoid
+multiple includes of the same header file: we enclose the content of the header file in a pre-compiler 'ifndef'
+statement that tests whether a macro 'EMLOYEE_H' already exists. This macro is
+defined when the header file is included the first time in one
+of the myriads of C files belonging to your application (you may have forgotten
+where). Any later accidental include would simply exclude the complete content
+of this header file.</p>
+
+<p>Second, we create a file employee.c, that includes this header file
+and implements 'initialize()'</p>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include "employee.h"
+
+void initialize ( DataEntry * person )
+{
+   printf ( "Specify details:\n" ) ;
+   printf ( "ID     : " ); scanf ( "%d", &(person->id_number) ) ;
+   printf ( "Age    : " ); scanf ( "%d", &(person->age) ) ;
+   printf ( "Salary : " ); scanf ( "%f", &(person->salary) ) ;
+}
+</pre>
+
+<p>Note that employee.h is included with quotes instead of angle brackets &lt; and &gt;. This
+is due to that fact that this header file resides in your local project directory and not
+somewhere deep within the file system of Linux. Also note, that the C compiler can compile
+this file, because, due to the include of your header file, the structure of 'DataEntry'
+is known.</p>
+
+<p>Finally, we create the main application that uses the employee bits to implement
+a database. We create the file mydatabase.c, containing the main() function:</p>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include  "employee.h"
+
+int main()
+{
+
+   DataEntry employeeList[100] ;
+   
+   /* call initializer */
+   initialize ( employeeList ) ;
+
+   printf ( "Employee :\n\tID = %d\n\tAge = %d\n\tSalary = %f\n",
+      employeeList[0].id_number,
+	  employeeList[0].age,
+	  employeeList[0].salary
+   ) ;
+}
+</pre>
+
+<p>Compile the files into an application, called 'mydatabase'</p>
+<p class="sourceContent">
+<code><b>$ gcc -c employee.c<br>
+$ gcc -c mydatabase.c<br>
+$ gcc -o mydatabase mydatabase.o employee.o<br>
+</b></code>
+</p>
+
+<p>NOTE: A header file is an interface to a library and can be regarded as a kind of "bridge" between your main program
+and the library code you use, contained in other C files. As the library interface,
+the header file contains all elements needed by the main program to use the
+library functions. These are foremost the function prototypes, but also structures you will
+use in your main program.</p>
+
+<p>The header file <code>#include "employee.h"</code>,
+representing the interface to your little library has to be included in your
+main program <code>mydatabase.c</code>, otherwise the function <code>initialize()</code> and structure
+<code>DataEntry</code> would be unknown to the main program. Try out what happens if
+you comment out its include.</p>
+
+
+<p>For the compilation of two files, it may be feasible to manually type in the
+commands each time. For larger projects, we may use 'make'</p>
+
+<h2>The build tool <code>make</code></h2>
+
+<p>The command <code>make</code> is looking for a file with the name "Makefile" in
+the current directory and executes 'make' statements specified in this file. A makefile
+contains rules that combine 'targets', 'prerequisites' and 'actions': In order to
+achieve a 'target', all the prerequisites must obtain and in order to obtain those,
+all the actions declared by a make rule have to be executed.</p>
+<p>For example:</p>
+
+<pre>
+helloworld : hello.o
+	gcc -o helloworld hello.o
+
+hello.o : hello.c
+	gcc -c hello.c
+</pre>
+
+<p>This is a simple make file to compile and link helloworld. You can do that
+by typing at the command prompt:</p>
+
+<p class="sourceContent">
+<code><b>$ make helloworld
+</b></code>
+</p>
+<p>Note: <code>make</code> requires that a tab is used to create an indentation in front of each action. Do
+not use spaces to indent before the compile actions !!</p>
+
+<p>The target 'all' is the default target, make will automatically
+execute it:</p>
+
+<pre>
+all: helloworld
+
+helloworld : hello.o
+	gcc -o helloworld hello.o
+
+hello.o : hello.c
+	gcc -c hello.c
+</pre>
+
+<p class="sourceContent">
+<code><b>$ make
+</b></code>
+</p>
+
+<p>We can now add compilation targets for the mydatabase app to this make file:</p>
+
+<pre>
+all: helloworld mydatabase
+
+helloworld : hello.o
+	gcc -o helloworld hello.o
+
+hello.o : hello.c
+	gcc -c hello.c
+
+mydatabase : mydatabase.o employee.o
+	gcc -o mydatabase mydatabase.o employee.o
+
+mydatabase.o : mydatabase.c employee.h
+	gcc -c mydatabase.c
+
+employee.o : employee.c employee.h
+	gcc -c employee.c
+
+clean :
+	rm -f helloworld
+	rm -f mydatabase
+	rm -f *.o
+</pre>
+
+<p>You can create one big make file containing all compilation targets of your practicals.
+As you can see, we can also introduce targets without a right-hand side, such as the 'clean'
+target: with that we can start whatever action is required by typing 'make clean'. So far,
+we have only specified one compilation action per target. However, the list actions
+underneath a target may be of arbitrary length (as is shown with the 'clean' target).</p>
+
+<p>The purpose of <code>make</code> is to check which files have been changed. Only
+this file has to be recompiled. And all the files that depend on it ... The <code>make</code>
+rules define these dependencies among the file of a project, which allows to automatically
+and selectively compile an application.</p>
+
+<p>A more sophisticated <code>make</code> file would be the following:</p>
+<pre>
+CC=gcc
+CFLAGS=-c -Wall
+LFLAGS=
+
+all: helloworld mydatabase
+
+helloworld : hello.o
+	$(CC) $(LFLAGS) -o helloworld hello.o
+
+hello.o : hello.c
+	$(CC) $(CFLAGS) hello.c
+
+mydatabase : mydatabase.o employee.o
+	$(CC) $(LFLAGS) -o mydatabase mydatabase.o employee.o
+
+mydatabase.o : mydatabase.c employee.h
+	$(CC) $(CFLAGS) mydatabase.c
+
+employee.o : employee.c employee.h
+	$(CC) $(CFLAGS) employee.c
+
+clean :
+	rm -f helloworld
+	rm -f mydatabase
+	rm -f *.o
+</pre>
+
+<p>If you want more automation and sophistication in your makefile, see the following link:</p>
+<ul>
+<li>GNU make: <a href="http://www.gnu.org/software/make/manual/make.html">http://www.gnu.org/software/make/manual/make.html</a></li>
+</ul>
+
+<h2>Arrays and Pointers</h2>
+
+<p>Note, that a string is an array of characters:</p>
+
+<pre>
+char myStringArray [256] ;
+</pre>
+<p>Strings, like any array, can be initialised when they are declared:</p>
+<pre>
+char myStringArray [256] = { 'T','h','i','s',' ','i','s',' ','a',' ','S','t','r','i','n','g' } ;
+</pre>
+
+<p>We can also use a shorter, more convenient form as an initialiser:</p>
+
+<pre>
+char myStringArray [256] = "This is a String" ;
+</pre>
+
+<p>If we look into the compiled program, we will see
+that the line <code>char myStringArray [256] = { 'T','h','i','s',' ','i','s',' ','a',' ','S','t','r','i','n','g' } ;</code>
+as well as <code>char myStringArray [256] = "This is a String" ;</code> is held in the '.text'
+segment - the compiler translates this C language construct into program code,
+that may do something like the following:</p>
+
+<pre>
+myStringArray[0] = 'T' ;
+myStringArray[1] = 'h' ;
+myStringArray[2] = 'i' ;
+myStringArray[3] = 's' ;
+myStringArray[4] = ' ' ;
+myStringArray[5] = 'i' ;
+myStringArray[6] = 's' ;
+myStringArray[7] = ' ' ;
+myStringArray[8] = 'a' ;
+myStringArray[9] = ' ' ;
+myStringArray[10] = 'S' ;
+myStringArray[11] = 't' ;
+myStringArray[12] = 'r' ;
+myStringArray[13] = 'i' ;
+myStringArray[14] = 'n' ;
+myStringArray[15] = 'g' ;
+myStringArray[16] = '\0' ;
+myStringArray[17] = '\0' ;
+...
+...
+myStringArray[255] = '\0' ;
+</pre>
+
+
+<h2>Exercise 3.1.1 String Literals</h2>
+
+<p>String Literals are data objects that are held in one of the data segments
+of a process image and have a start address and a memory area allocated to it. In contrast to the initializers mentioned previously, they are data objects and not just program code.</p>
+
+<p>Objects in your program that are set under
+<code>"..."</code>, are a String literal. Such a String literal occupies memory and has a start address.</p>
+<p>Where is it located? This depends on the compiler: in our case, we use the GNU C
+compiler gcc. As we know (I hope), when a program is started, a process image is created.
+This process image consists of a set of segments, such as the '.text' segment containing
+the compiled and linked program code and other segments containing data, heap and stack.
+The gcc compiler will create a special '.rodata' (as in "read only data") segment, where
+it stores the String literals.</p>
+<p>As string literals are objects with a start address, we can let pointers point to it. For example, in case we want to initialise a character pointer, we need String literals: a pointer needs
+a data object it can point to. The compiler will create program code that allocates the
+String Literal in the '.rodata' segment and generate an assigment statement to let the
+pointer point to it.</p>
+
+
+<p>Open an editor and create the following test program</p>
+<pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+   // this declares and initialises variables
+   char myStringArray1 [256] = { 'T','h','i','s',' ','i','s',' ','a',' ','S','t','r','i','n','g' } ;
+   char myStringArray2 [256] = "This is another String" ;
+
+   // we also declare a pointer to character
+   char * p ;
+
+   // here starts the action
+   // first try out the following:
+   p = "This is a String Literal" ;
+
+   printf ( "Content of myStringArray 1 = %s\n", myStringArray1 ) ;
+   printf ( "Content of myStringArray 2 = %s\n", myStringArray2 ) ;
+   printf ( "Content of p               = %s\n", p ) ;
+}
+</pre>
+
+<p>Compile this example and name it 'teststring'. We use the Linux tool 'objdump' to look into
+the executable object:</p>
+<p class="sourceContent">
+<code>
+objdump -s teststring
+</code>
+</p>
+<p>Find the '.rodata' segment in the output, it should be something like the
+following:</p>
+
+<!--
+<pre>
+Contents of section .rodata:
+ 8048638 03000000 01000200 54686973 20697320  ........This is 
+ 8048648 61205374 72696e67 204c6974 6572616c  a String Literal
+ 8048658 00000000 436f6e74 656e7420 6f66206d  ....Content of m
+ 8048668 79537472 696e6741 72726179 31203d20  yStringArray1 = 
+ 8048678 25730a00 436f6e74 656e7420 6f66206d  %s..Content of m
+ 8048688 79537472 696e6741 72726179 32203d20  yStringArray2 = 
+ 8048698 25730a00 436f6e74 656e7420 6f662070  %s..Content of p
+ 80486a8 20202020 20202020 20202020 20203d20                = 
+ 80486b8 25730a00                             %s..            
+</pre>
+-->
+<pre>
+  Contents of section .rodata:
+ 08a0 01000200 00000000 54686973 20697320  ........This is 
+ 08b0 61205374 72696e67 204c6974 6572616c  a String Literal
+ 08c0 00000000 00000000 436f6e74 656e7420  ........Content 
+ 08d0 6f66206d 79537472 696e6741 72726179  of myStringArray
+ 08e0 2031203d 2025730a 00000000 00000000   1 = %s.........
+ 08f0 436f6e74 656e7420 6f66206d 79537472  Content of myStr
+ 0900 696e6741 72726179 2032203d 2025730a  ingArray 2 = %s.
+ 0910 00000000 00000000 436f6e74 656e7420  ........Content 
+ 0920 6f662070 20202020 20202020 20202020  of p            
+ 0930 2020203d 2025730a 00                    = %s..    
+</pre>
+
+
+<p>Segment '.rodata' contains the String Literals as assigned
+to pointer p. In addition, it also contains the text strings used in printf(). However, the initialisation strings are in the '.text' segment:</p>
+
+<!--
+<pre>
+Contents of section .text:
+...
+... somewhere further down you see
+...
+8048460 df89d1f3 abc64424 1c54c644 241d68c6  ......D$.<b><font color="blue">T</font></b>.D$.<b><font color="blue">h</font></b>.
+ 8048470 44241e69 c644241f 73c64424 2020c644  D$.<b><font color="blue">i</font></b>.D$.<b><font color="blue">s</font></b>.D$  .D
+ 8048480 242169c6 44242273 c6442423 20c64424  $!<b><font color="blue">i</font></b>.D$"<b><font color="blue">s</font></b>.D$# .D$
+ 8048490 2461c644 242520c6 44242653 c6442427  $<b><font color="blue">a</font></b>.D$% .D$&<b><font color="blue">S</font></b>.D$'
+ 80484a0 74c64424 2872c644 242969c6 44242a6e  <b><font color="blue">t</font></b>.D$(<b><font color="blue">r</font></b>.D$)<b><font color="blue">i</font></b>.D$*<b><font color="blue">n</font></b>
+ 80484b0 c644242b 67c78424 1c010000 54686973  .D$+<b><font color="blue">g</font></b>..$....This
+ 80484c0 c7842420 01000020 697320c7 84242401  ..$ ... is ..$$.
+ 80484d0 00006120 5374c784 24280100 0072696e  ..a St..$(...rin
+ 80484e0 67c78424 2c010000 00000000 8d9c2430  g..$,.........$0
+ ... 
+ ...
+</pre>
+-->
+<pre>
+Contents of section .text:
+...
+... somewhere further down you see
+...
+ 0740 fdffff6e c685fffd ffff6748 b8546869  ...n......gH.Thi
+ 0750 73206973 2048ba61 6e6f7468 65722048  s is H.another H
+ 0760 8985f0fe ffff4889 95f8feff ff48b853  ......H......H.S
+ 0770 7472696e 670000ba 00000000 48898500  tring.......H...
+ ... 
+ ...
+</pre>
+
+<p>The array initializer <code>"This is another String"</code> is part of the program text, and not an explicit data objects. The string literal <code>"This is a String Literal"</code>, on the other hand, is a data object that occupies a contiguous area of memory. It is, however, "read-only" and cannot be changed. It is also a data object without a name. As it is an array, it has an address where it starts in memory and elements of it can be accessed with an index.</p>
+
+<p>Open and editor and create the following test program</p>
+<pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+   for ( int i=0; i < 26; i++ )
+      printf ( "Character %d in the alphabeth = %c\n", i, "abcdefghijklmnopqrstuvwxyz"[i] ) ;
+
+}
+</pre>
+
+<p>Compile this example. Note the awkward syntax of <code>"abcdefghijklmnopqrstuvwxyz"[i]</code> for
+accessing single elements of this read-only array ! </p>
+
+<h2>Exercise 3.1.2 Pointers, Arrays and String Literals</h2>
+<p>In case we want to initialise a character pointer, we need String literals: a pointer needs
+a data object it can point to. The compiler will create program code that allocates the
+String Literal in the '.rodata' segment and generate an assigment statement to let the
+pointer point to it.</p>
+<p>Open an editor and try the following:</p>
+
+<pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+   // we declare a pointer to character and initialise it
+   char * p = "This is a String";
+
+   printf ( "Content of p               = %s\n", p ) ;
+}
+</pre>
+<p>Compile this example and name it 'teststring'. We use the Linux tool 'objdump' to look into
+the executable object:</p>
+<p class="sourceContent">
+<code>
+objdump -s teststring
+</code>
+</p>
+<p>Find the '.rodata' segment in the output, it should be something like the
+following:</p>
+<pre>
+Contents of section .rodata:
+ 0700 01000200 00000000 54686973 20697320  ........This is 
+ 0710 61205374 72696e67 00000000 00000000  a String........
+ 0720 436f6e74 656e7420 6f662070 20202020  Content of p    
+ 0730 20202020 20202020 2020203d 2025730a             = %s.
+ 0740 00                                   .      
+</pre>
+<p>In case of pointers, the initialiser has to be a data object, where the pointer
+can point to. Therefore, in case of a pointer, the initialiser is a String Literal.
+</p>
+<p>You may realize that the format string of the <code>printf()</code> is also
+a String literal held in the '.rodata' segment</p>
+<p>The above example is the same as if we would write the following:</p>
+
+<pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+   // we declare a pointer to character
+   char * p ;
+
+   // we do some action
+   p = "This is a String";
+
+   printf ( "Content of p               = %s\n", p ) ;
+}
+</pre>
+
+<p>Compare this to using an array and assign a String literal:</p>
+
+<pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+   // we declare a pointer to character
+   char myStringArray[100];
+
+   // we do some action
+   myStringArray = "This is a String";
+
+}
+</pre>
+<p>Compile this example, the compiler will produce the following error message:</p>
+<p class="sourceContent">
+<code>
+$ make<br>
+gcc -c teststring.c<br>
+teststring.c: In function ‘main’:<br>
+teststring.c:38:18: error: incompatible types when assigning to type ‘char[100]’ from type ‘char *’<br>
+make: *** [teststring.o] Error 1
+</code>
+</p>
+
+<p>A String Literal is of type <code>char *</code> ("pointer to char") and, therefore, not compatible with the array
+declaration. We learned that the name of an array can be regarded as a 'pointer' to the
+first element of the array. However, an array
+points to a fixed memory location, where its elements are, it cannot be made to point to
+something else - the name 'myStringArray' can be regarded as an "inmutable" pointer.</p>
+<p>Normal pointer variables, such as <code>char * p</code>, are mutable - they can be made to point to any location in memory.</p>
+
+<p>String Literals are data objects with some memory and they are of type <code>char *</code>.
+We use this fact: if the pointer points to an array of objects that
+are allocated in memory, then we can access these objects with an array index.</p>
+<p> String literals do not have names, but they are of type
+<code>char *</code> and have allocated memory, therefore, we simply attach the index specification to the String Literal itself.</p>
+<p>This is an example similar to the one above:</p>
+
+<pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+   char c ;
+   c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[3] ;
+   printf ( "The 4th character in the alphabeth is %c\n", c ) ;
+
+   // or we can even write shorter:
+   printf ( "The 4th character in the alphabeth is %c\n", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[3] ) ;
+
+   // we can print out all characters contained in the String Literal
+   for ( int i = 0; i < strlen ( "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ); i ++ )
+      printf ( "Character at pos %d = %c\n", i, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i] ) ;
+}
+</pre>
+
+<h2>Segmentation Faults</h2>
+<p>Finally, we come to the important bit about String Literals: they are "read-only" !!.
+Try to change an element of such a String Literal:
+
+<pre>
+#include &lt;stdio.h&gt;
+
+int main()
+{
+   // we declare a pointer to character
+   char * p ;
+
+   // we do some action
+   p = "This is a String";
+
+   printf ( "Content of p               = %s\n", p ) ;
+
+   p[3] = 'S' ;
+   printf ( "Content of p               = %s\n", p ) ;
+}
+</pre>
+
+<p>It will compile normally. However, if you run this program, it
+will terminate with a Segmentation fault - we cannot modify anything
+within segment '.rodata' !!!</p>
+
+<h2>Lists of Strings, Multi-dimensional Character Arrays</h2>
+
+<p>A list of strings is an array of character arrays.
+For example, if we assume
+that the list is of length 10, then we can allocate the following array of characters:</p>
+
+<pre>
+#define LENGTH  10
+#define SIZE   256
+
+char myStringList [10][256] ;
+</pre>
+
+<p>This is a list of Strings, where each string has a fixed size of 256 characters. We can
+initialise this list in the usual way:</p>
+
+<pre>
+#define LENGTH  10
+#define SIZE   256
+
+char myStringList [10][256] = { {"this is string 001"},
+                                {"this is string 002"},
+                                {"this is string 003"},
+                                ... etc. ...
+                              };
+</pre>
+
+
+<p>We can omit specifying the first dimension (the length of the String list),
+as it is determined by the initialiser. However, we cannot omit the specification of the second dimension,
+as we have to allocate memory for the text of the strings in the initialiser. We can also omit the angle brackets
+around the strings in the initialiser:</p>
+
+<pre>
+#define LENGTH  10
+#define SIZE   256
+
+char myStringList [][256] = { "this is string 001",
+                              "this is string 002",
+                              "this is string 003",
+                                ... etc. ...
+                            };
+</pre>
+
+<p>The downside of using 2-dimensional arrays is the need to
+specify fixed sizes for rows and columns. A more dynamic approach is needed. We
+want to create a list of strings, where each string may be of different
+length. In a second step, we want such a list to be allocated on demand, without
+specifying a length in advance</p>
+
+<p>NOTE: Using 2-dimensional arrays creates a contiguous area
+in memory, with 'myStringList pointing to its start address.
+</p>
+<pre>
+
+myStringList[][]
+    +---+
+    | | |
+    +-|-+
+      |
+      V
+      0   1   2   3   4   5   6   7   8   9    10    11 ... 255
+    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+  0 | s | t | r | i | n | g |   | 0 | 0 | 1 | '\0' |            |
+    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+  1 | s | t | r | i | n | g |   | 0 | 0 | 2 | '\0' |            |
+    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+  2 | s | t | r | i | n | g |   | 0 | 0 | 3 | '\0' |            |
+    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+  3 | s | t | r | i | n | g |   | 0 | 0 | 4 | '\0' |            |
+    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+  4 | s | t | r | i | n | g |   | 0 | 0 | 5 | '\0' |            |
+    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+      .
+      .
+     etc.
+</pre>
+
+
+<h2>Exercise 3.1.3 String Lists</h2>
+
+<p>We can declare a single String as a character pointer and allocate memory for it:</p>
+
+<pre>
+char * myStringPointer ;
+myStringPointer = malloc ( sizeof(char) * 256 ) ;
+
+// you may realize that 'sizeof(char)' returns 1, therefore, we
+// may also write
+// myStringPointer = malloc ( 256 ) ;
+</pre>
+
+
+<p>The dynamic allocation of a list of strings is different from the
+declaration of a 2-dimensional char array. As a first step,we may specify a
+1-dimensional array of pointers. For each of these pointers, we have to
+allocate memory that will house the strings we want to store (or we
+can assign String Literals, but they will be stored read-only).</p>
+<p>In the following example, we don't know how much space we will need
+for each string, so in a first attempt, let's agree on a fixed
+size:</p>
+
+<pre>
+#define SIZE 256
+
+char *myPointerList[10] ;
+
+myPointerList[0] = malloc ( sizeof(char) * SIZE ) ;
+myPointerList[1] = malloc ( sizeof(char) * SIZE ) ;
+myPointerList[2] = malloc ( sizeof(char) * SIZE ) ;
+// etc.
+
+// now, we copy something into these allocated memory areas:
+
+strcpy ( myStringListPointer[0], "this is string 001" ) ;
+strcpy ( myStringListPointer[1], "this is string 002" ) ;
+strcpy ( myStringListPointer[2], "this is string 003" ) ;
+
+</pre>
+
+
+<p>What is the memory layout in case of a list of pointers?</p>
+<p>If we use the construct <code>char *myPointerList[10]</code>, 
+then we allocate memory in a non-contiguous fashion: first, an array of 10 pointers
+is established, that then can be made point to other dynamically allocated memory:</p>
+<pre>
+
+ myPointerList
+     +---+
+     | | |
+     +-|-+
+       |
+       V             0   1   2   3   4   5   6   7   8   9    10    11 ... 255
+     +----+        +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+   0 |  --|------->| s | t | r | i | n | g |   | 0 | 0 | 1 | '\0' |            |            |
+     +----+        +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+   1 |  --|-----.  +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+     +----+     '->| s | t | r | i | n | g |   | 0 | 0 | 2 | '\0' |            |
+   2 |  --|----.   +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+     +----+    |   +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+   3 |  --|---.'-->| s | t | r | i | n | g |   | 0 | 0 | 3 | '\0' |            |
+     +----+   |    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+   4 |  --|-. |    +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+     +----+ | '--->| s | t | r | i | n | g |   | 0 | 0 | 4 | '\0' |            |
+       .    |      +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+       .    |      +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+       .    '----->| s | t | r | i | n | g |   | 0 | 0 | 5 | '\0' |            |
+       .           +---+---+---+---+---+---+---+---+---+---+------+--- ... ----+
+       .
+       .
+      etc.
+
+</pre>
+
+<p>Instead of first allocating memory on the heap and then copying strings into it,
+we can also use String literals:</p>
+
+<pre>
+char *myPointerList[10] ;
+
+// we could also use string literals - the pointers will then
+// point to locations in the '.rodata' segment
+
+myStringListPointer[0] = "this is string 001" ;
+myStringListPointer[1] = "this is string 002" ;
+myStringListPointer[2] = "this is string 003" ;
+</pre>
+
+<p>Here, each pointer points to a String literal. As string literals are read-only data
+  objects that occupy memory in the <code>.rodata</code> segment, we do not need to 
+  do a <code>malloc</code>. However, the strings are immutable and may not be very useful.</p>
+
+<p>We can initialize an array of pointers also in the following way, the length of the array is determined, as usual, by the initializer:</p>
+
+<pre>
+
+char *myPointerList[] = { "this is string 001",
+                          "this is string 002",
+                          "this is string 003",
+                           ... etc. ...
+                       };
+</pre>
+
+<p>This form of initialization allows for a convenient declaration of
+lists of items in our program.</p>
+
+<p class="newsBox">NOTE: Always read pointer declarations right-to-left</p>
+
+<p><b>For example: the expression
+<code>char * myStringList[]</code> can be read as: "array '[]' myStringList of pointers '*' to 'char'</b>"</p>
+
+<p>Open an editor and create examples with these code fragments. Compile these different versions and check with <code>objdump</code> where these initialisation strings are located. It is important to know that actual memory has been allocated for any kind of variable and whether pointers point to an allocated memory in order to avoid segmentation faults. </p>
+
+<h2>Dynamic Allocation with <code>malloc</code></h2>
+
+For the dynamic allocation of memory from the heap (a segment in the process address space,
+please look this up in lectures slides and in books recommended), the system
+call 'malloc()' (in its various forms) is used. The call malloc(int size) requires
+the specification the number of bytes of memory to be allocated. The function returns
+a pointer to the memory allocated:
+
+<pre>
+void *malloc ( size_t number_of_bytes )
+</pre>
+
+<p>The function malloc() returns a pointer of type <code>void *</code>, pointing to the
+start of this memory area. If memory cannot be allocated, a <code>NULL</code> pointer
+is returned.</p>
+<p>As a pointer of type <code>void *</code> is returned, it can be converted to any type.
+The<code>size_t</code> argument type is defined in <code>stdlib.h</code> and is an unsigned type
+(find this header file on your system and look it up).</p>
+<p>Usually, memory is allocated for a particular data type. This can be <code>char</code>
+or <code>int</code> etc., but usually, we allocate memory for <code>struct</code> constructs.</p>
+
+<p>Examples:</p>
+<pre>
+char *pointer_dynamic_char_array = NULL ;
+pointer_dynamic_char_array = malloc(100);
+</pre>
+
+<p>This allocates exactly 100 bytes for this character array. In the next example,
+we use <code>sizeof()</code>, the usual form to allocate memory:</p>
+
+<pre>
+int *pointer_integer_array = NULL ;
+pointer_integer_array = malloc(100 * sizeof(int));
+pointer_integer_array = malloc(100 * sizeof(*pointer_integer_array)) ;
+pointer_integer_array = (int *) malloc (100 * sizeof(int)) ;
+</pre>
+
+<p>The previous example shows three forms of allocating memory. The first allocates
+100 times sizeof(int). The second allocates memory 100 times of a size according to
+the type of the <code>pointer pointer_integer_array</code>. The third form adds an extra type cast in front
+of the malloc to inform the compiler explicitly that this is a correct assignment.
+(the variants can also be combined).</p>
+
+
+<h2>Exercise 3.1.4 Dynamic Allocation of a Pointer Array for String Lists</h2>
+<p>This shows how to allocate the pointer array dynamically on the heap:</p>
+
+<pre>
+#define LENGTH  10
+
+char *testdata[] = { "This is the first string",
+                     "This is the second one",
+                     "Finally, this is the third" } ;
+
+int main()
+{
+   // declare a pointer to a pointer to char
+   char ** myStringListPointer ;
+
+   // this allocates an array of pointers to character with LENGTH elements
+   // note that 'char *' is a pointer type: we want to allocate memory
+   // for pointers, as myStringListPointer is a list of pointers:
+
+   myStringListPointer = malloc ( sizeof(char *) * LENGTH ) ;
+
+   // you may realize that you have to use 'sizeof(char *)' in
+   // the malloc() above, as we
+   // don't know how many bits a pointer needs on your computer:
+   // if it is a 32-bit operating system, then a pointer needs
+   // 4 bytes, on a 64-bit OS it will need 8 bytes
+
+   // we also allocate memory for each String, however we first measure
+   // the string we want to store
+   // we have to account for the '\0' at the end of a string
+   // we calculate: we need strlen(testdata[0]) + 1, which is the string
+   // "This is the first string" plus one extra byte for '\0', and this
+   // times sizeof(char). For purpose of being precise and getting used to
+   // to it, we write here
+   // sizeof(char), although char is only 1 byte. However, in case
+   // you would use another type, you have to use sizeof()
+
+   myPointerList[0] = malloc ( sizeof(char) * (strlen(testdata[0])+1) ) ;
+   myPointerList[1] = malloc ( sizeof(char) * (strlen(testdata[1])+1) ) ;
+   myPointerList[2] = malloc ( sizeof(char) * (strlen(testdata[2])+1) ) ;
+   // etc.
+
+   // now, we copy something into these allocated memory areas:
+
+   strcpy ( myStringListPointer[0], testdata[0] ) ;
+   strcpy ( myStringListPointer[1], testdata[1] ) ;
+   strcpy ( myStringListPointer[2], testdata[2] ) ;
+}
+</pre>
+
+<p>Open an editor and write a program with this content. Compile and run
+it. You may try out the two versions, one with the String literals,
+one with dynamically allocating space for the strings. You may add some printf().</p>
+
+<p>Note the notation used here:  with <code>malloc ( sizeof(char *) * LENGTH )</code>, we
+allocate a list of pointers <code>(char *)</code>. It depends on the OS how much
+memory a pointer itself will occupy (for 32-bit: 4 bytes, for 64-bit: 8 bytes).</p>
+<p>Note that we dynamically allocate extra memory on the heap with additional calls
+to <code>malloc()</code> for the actual strings.</p>
+
+
+<h2>Exercise 3.1.5 Memory Leak</h2>
+
+<p>The following example shows how we can create a memory leak: In this
+code fragment, first we allocate a list of strings on the heap. In
+a second step, we simply re-direct the pointers to something else, in
+this case to some string literals.</p>
+
+<pre>
+#define LENGTH  10
+#define SIZE   256
+
+char ** myStringListPointer ;
+myStringListPointer = malloc ( sizeof(char*) * LENGTH ) ;
+
+// declare a pointer to a pointer to char
+// and allocate an array of pointers to character with LENGTH elements
+char ** myStringListPointer = malloc ( sizeof(char *) * LENGTH ) ;
+
+// we allocate memory for each string
+myStringListPointer[0] = malloc ( 256 ) ;
+strcpy ( myStringListPointer[0], "this is string 001" ) ;
+myStringListPointer[1] = malloc ( 256 ) ;
+strcpy ( myStringListPointer[1], "this is string 002" ) ;
+myStringListPointer[2] = malloc ( 256 ) ;
+strcpy ( myStringListPointer[2], "this is string 003" ) ;
+
+// we don't want this anymore, therefore we
+// redirect the pointers to other data objects
+
+myStringListPointer[0] = "this is string 001" ;
+myStringListPointer[1] = "this is string 002" ;
+myStringListPointer[2] = "this is string 003" ;
+</pre>
+
+<p>Open an editor and write a program with this content. Compile and run
+it. You may add some printf().</p>
+
+<p>This is valid C code. However, the pointers are simply redirected with
+no regard for the memory areas allocated on the heap. These areas become
+orphaned, as no pointers are pointing to them anymore. By loosing these
+references, we cannot free these areas for re-allocation. We created a memory leak !!</p>
+<p>C does not have a garbage collection mechanism, such as Java, therefore,
+we as the programmers have to
+program the release of allocated memory ourselves. C provides the system
+call <code>free( )</code> to free memory allocated for a pointer.</p>
+
+
+<h2>Exercise 3.1.6 Free Memory</h2>
+
+<p>C provides the system
+call <code>free( )</code> to free memory allocated for a pointer. The 
+running program memorizes the amount of memory allocated to a
+particular pointer, therefore it is sufficient to hand over this pointer
+to function <code>free()</code>. For example:</p>
+
+<pre>
+#define LENGTH  10
+
+int main()
+{
+   // declare a pointer to a pointer to char
+   // and allocate an array of pointers to character with LENGTH elements
+   char ** myStringListPointer = malloc ( sizeof(char *) * LENGTH ) ;
+
+   // we allocate memory for each string
+   myStringListPointer[0] = malloc ( 256 ) ;
+   strcpy ( myStringListPointer[0], "this is string 001" ) ;
+   myStringListPointer[1] = malloc ( 256 ) ;
+   strcpy ( myStringListPointer[1], "this is string 002" ) ;
+   myStringListPointer[2] = malloc ( 256 ) ;
+   strcpy ( myStringListPointer[2], "this is string 003" ) ;
+
+   // we do something here ...
+
+   // we want to get rid of the complete content of this
+   // allocated construct
+
+   free ( myStringPointer[0] ) ;
+   free ( myStringPointer[1] ) ;
+   free ( myStringPointer[2] ) ;
+
+   free ( myStringListPointer ) ;
+
+   // now we can do another allocation
+
+   myStringListPointer = malloc ( sizeof(char *) * LENGTH ) ;
+
+   // etc.
+
+}
+</pre>
+
+<p>In order to avoid memory leakage, we have to carefully <code>malloc()</code> and <code>free()</code>
+dynamic data structures. An important rule is to think of <code>malloc()</code> and <code>free()</code>
+as a kind of "brackets" enclosing program text that uses these allocated memory structures.
+<code>free()</code> should not be used at call-levels deeper than <code>malloc()</code>.</p>
+
+
+<h2>Exercise 3.2 Pointers</h2>
+<p>The reason for the next exercise is that you will encounter these kinds of constructs
+in C programs. In particular, the increment and decrement operators '++' and '--' are
+frequently used to move pointers across memory. A good understanding of the mechanisms
+how to manipulate pointers, e.g. using a temporary pointer "char * tempPtr", which points to the
+beginning of an array, to traverse this array by incrementing it, is important.</p>
+<p>Please note: <code>tempPtr++</code> is the same as <code>tempPtr = tempPtr + 1</code></p>
+
+<p>Accessing dynamically allocated memory can be done in two different fashions: via pointer arithmetic or as you would access elements of an array:</p>
+
+<pre>
+int *int_array = NULL ;
+int *iptr = NULL ;
+
+int_array = malloc(100 * sizeof(*int_array)) ; // allocate array of 100 integers
+
+// the array method
+
+int_array[0] = 100 ;
+int_array[1] = 99 ;
+int_array[2] = 98 ;
+// etc
+
+// or with pointer arithmetic
+iptr = int_array ;
+
+*iptr = 100 ;     // assign the value 100 to first array element
+iptr ++ ;         // increment pointer, pointer does not point to beginning
+                  // array anymore
+*iptr = 99 ;
+iptr ++ ;
+// etc
+
+// we can also use a for loop to initialise all array elements with a value
+
+iptr = int_array;  // we let iptr point to the first element of int_array
+for ( int i = 0; i < 100; i++ ) *iptr++ = 100 - i;
+
+// we can print out this array in the array or pointer fashion
+iptr = int_array;
+printf ( "List[0] = %d\n", int_array[0] ) ;
+for ( int i = 0; i < 100; i++ )printf ( "List[0] = %d\n", *iptr++ ) ;
+</pre>
+
+<p>Test your knowledge:</p>
+<ul>
+<li>Do you know what '*iptr++ = 100 - i;' is doing ? </li>
+<li>Do you know what 'for ( int i = 0; i < 100; i++ )printf ( "List[0] = %d\n", *iptr++ )' is doing ?</li>
+<li>Do you know the difference between the expressions '++i' and "i++'? What does (*iptr)++ do, compared
+to *(iptr++) ?</li>
+</ul>
+<p>If you have difficulty understanding these very efficiently written C code, please
+approach the practical demonstrator for explanation.</p>
+
+<p>Observations: using the array method does not change the pointer <code>int_array</code>, it
+always points to the beginning of the dynamically allocated array. Using pointer
+arithmetic, we therefore use a temporary pointer <code>iptr</code>, as we change its
+value. Its value is a memory address within the memory area dynamically allocated.</p>
+
+
+<h4>Example 3.2</h4>
+<p>Consider the following example:</p>
+
+
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+#define BUFFERSIZE 53
+#define BYTE unsigned char
+
+// we could also use typedef unsigned char BYTE
+
+typedef struct dbEntry {
+   int key ;
+   char data[32] ;
+} DBEntry ;
+
+int main()
+{
+   BYTE buffer[BUFFERSIZE] ;
+   DBEntry * myData = NULL ;
+
+   // initialize buffer, set all elements to 0
+   for ( int i = 0; i < BUFFERSIZE; i++) buffer[i] = '\0' ;
+
+   // we write some initial string into buffer:
+   char * name = "Your name goes here";
+   strcpy ( buffer, name ) ;
+
+   // we use buffer as memory for DBEntry
+   // we assign a memory address to 'myData' that is
+   // the address of buffer + strlen(name) + 1
+   // with that, we assign a value to myData that is an address
+   // to a memory location
+   // within the byte array 'buffer' that is located after
+   // the '\0' of name:
+
+   myData = (DBEntry *)(buffer + strlen(name) + 1) ;
+
+   // we print out various sizes   
+   
+   printf ( "Length of name = %d\n", strlen(name)) ;
+   printf ( "Size of DBEntry = %d\n", sizeof(DBEntry)) ;
+
+   // we can now assign values to the elements of DBEntry
+   // as DBEntry points to a location somewhere in the
+   // middle of 'buffer', these values are stored in
+   // this array
+
+   myData->key = 100 ;
+   strcpy (  myData->data, "This is some data" ) ;
+
+   // what is now stored in buffer ?
+   
+   printf ( "Name : %s\n", buffer ) ;
+   printf ( "Key  : %d\n", myData->key ) ;
+   printf ( "Data : %s\n", myData->data ) ;
+   
+}
+</pre>
+
+<p>This is an example how different data structures can share an underlying memory
+area.</p>
+<p>The expression 'myData = (DBEntry *)(buffer + strlen(name) + 1)' assigns an address value
+to pointer variable 'myData'. This address points to a location within
+buffer array. The first couple of bytes are occupied by the string we added first, therefore,
+we move the pointer 'myData' after this string.</p>
+<p>We calculate: (a) the start address of buffer, (b) plus the length of the string
+situated at the beginning of buffer, (c) plus one for the '\0' at the end of the first string. This
+is position in buffer, where we now want to put information by using the struct DBEntry. Finally,
+we have to use the cast '(DBEntry *)' to declare that this is now a pointer to a DBEntry structure.
+</p>
+<p>We can now use 'myData' to add content to the array 'buffer'. The content of this structure is
+printed out with the three printf() statements. As myData maps directly into 'buffer', we can also
+use pointer arithmetics to show the same content in a different way:</p>
+
+<pre>
+   // this is the same printout, just accessing the values
+   // with pointers and type casting in 'buffer'
+
+   printf ( "Name : %s\n", buffer ) ;   
+   printf ( "Key  : %d\n", (int)(*(buffer + strlen(name) + 1)) ) ;
+   printf ( "Data : %s\n", buffer + strlen(name) + 1 + sizeof(int) ) ;
+</pre>
+
+<p>The expression '(int)(*(buffer + strlen(name) + 1))', retrieving an integer
+(4 bytes, according to cast (int)) from a location in 'buffer', is the same
+value that is also accessible via 'myData->key'</p>
+<p>How do we see the complete content of 'buffer? Let's try to print it out:</p>
+
+<pre>
+   for ( int i = 0; i < BUFFERSIZE; i++) fputc (  buffer[i], stdout) ;
+   printf("\n") ;
+
+   for ( int i = 0; i < BUFFERSIZE; i++) printf ( "%c", buffer[i]) ;
+   printf("\n") ;
+</pre>
+
+<h2>Exercise 3.2.1 Hexdump</h2>
+
+<p>To get a better picture, a so-called hex dump of this memory would give more
+insight. Try to implement such function hexdump(): </p>
+<ul>
+<li>void hexdump ( void * address, int length )
+</ul>
+<p>The function hexdump takes a pointer of type 'void' (can take any type) and a length. It
+should produce the following output, similar to the output produced by the Unix command 'hexdump -C':</p>
+<pre>
+0000 59 6f 75 72 20 6e 61 6d 65 20 67 6f 65 73 20 68 Your name goes h
+0010 65 72 65 00 64 00 00 00 54 68 69 73 20 69 73 20 ere.d...This is 
+0020 73 6f 6d 65 20 64 61 74 61 00 00 00 00 00 00 00 some data.......
+0030 00 00 00 00 00                                  .....           
+</pre>
+
+<p>Note the four bytes '64 00 00 00' in line 2: they represent the integer
+'myData->key', where hexadecimal 64 corresponds to 100. The byte sequence
+is reversed, this is according to the fact that Intel processors use
+"little-endian" format, opposite to the "big-endian" format we use
+in everyday life. (see <a href="http://en.wikipedia.org/wiki/Endianness">Wikipedia</a> for more information)</p>
+
+<p>Start with creating the header file hexdump.h, which exposes the function prototype:</p>
+<pre>
+#ifndef HEXDUMP_H
+#define HEXDUMP_H
+
+int hexdump ( void *, int ) ;
+
+#endif
+</pre>
+<p>You may get inspirations for your implementation <a href="practicals/abdn.only/Practical02/hexdump.c">here</a></p>
+
+<p>Finally, we can make buffer persistent and write it out to a file</p>
+<pre>
+   FILE * fp = fopen ( "testfile", "w" ) ;
+   if ( fwrite ( buffer, sizeof(buffer), 1, fp ) < 0 )
+      fprintf ( stderr, "cannot write to file\n" ) ;
+   fclose(fp) ;
+</pre>
+
+<p>You can now use the Unix command 'hexdump -C testfile' to show a hexdump of this file</p>
+
+<p>The completed code is the following:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include "hexdump.h"
+
+#define BUFFERSIZE 53
+#define BYTE unsigned char
+
+typedef struct dbEntry {
+   int key ;
+   char data[32] ;
+} DBEntry ;
+
+int main()
+{
+   BYTE buffer[BUFFERSIZE] ;
+   DBEntry * myData = NULL ;
+
+   // initialize buffer, set all elements to 0
+   for ( int i = 0; i < BUFFERSIZE; i++) buffer[i] = '\0' ;
+
+   // we write some initial string into buffer:
+   char * name = "Your name goes here";
+   strcpy ( buffer, name ) ;
+
+   // we use buffer as memory for DBEntry
+
+   myData = (DBEntry *)(buffer + strlen(name) + 1) ;
+
+   // we print out various sizes   
+   
+   printf ( "Length of name = %d\n", strlen(name)) ;
+   printf ( "Size of DBEntry = %d\n", sizeof(DBEntry)) ;
+
+
+   myData->key = 100 ;
+   strcpy (  myData->data, "This is some data" ) ;
+
+   // what is now stored in buffer ?
+   
+   printf ( "Name : %s\n", buffer ) ;
+   printf ( "Key  : %d\n", myData->key ) ;
+   printf ( "Data : %s\n", myData->data ) ;
+   
+   // this is the same printout, just accessing the values of DBEntry
+   // with pointers and type casting in 'buffer'
+
+   printf ( "Name : %s\n", buffer ) ;   
+   printf ( "Key  : %d\n", (int)(*(buffer + strlen(name) + 1)) ) ;
+   printf ( "Data : %s\n", buffer + strlen(name) + 1 + sizeof(int) ) ;
+   
+   printf ("Hexdump :\n") ;
+   hexdump( buffer, BUFFERSIZE ) ;
+   
+   
+   FILE * fp = fopen ( "testfile", "w" ) ;
+   if ( fwrite ( buffer, sizeof(buffer), 1, fp ) < 0 )
+      fprintf ( stderr, "cannot write to file\n" ) ;
+   fclose(fp) ;
+}
+</pre>
+
+<h4>Exercise 3.2.2 Using Union</h4>
+
+<p>Implement a version of this program that uses a union to unify the buffer with the
+DBEntry structure.</p>
+
+
+<h2>Exercise 3.3 Arrays and Pointers</h2>
+
+Go back to example 3.1 and implement a version that allows to fill data records not only for the
+first element in the list, but for all elements.
+
+<h2>Exercise 3.4 Linked Lists</h2>
+
+Dynamic list structures are created as a chain of list elements, where each element is represented by a structure that contains information how to find the next list element. In Java, data structures, such as ArrayList or Hashmap, take lists of
+elements and can be dynamically extended.
+
+<p>The basic element of a linked list is a node. It contains, beside some payload, a pointer variable that points
+a next node:</p>
+
+<pre>
+struct node {
+   int someValue ;
+   struct node * next :  // this is the important bit
+} ;
+</pre>
+
+<p>This structure contains everything we need to create a dynamic list: the “payload”, which is the information we want to put into the list (here an integer), and variable next that allows this node to point to a next one.</p>
+
+<pre>
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+
+struct node {
+   int someValue ;
+   struct node * next :  // this is the important bit
+} ;
+
+typedef struct node Node ;
+
+int main()
+{
+   Node * list = NULL ;     // this is the start of the list, its “head”
+   Node * newEntry = NULL ; 
+
+   Node * currentNode = list ;
+   for ( int i = 0; i < 10; i ++ )
+   {
+      // we allocate memory of a size that can accommodate a node
+      newEntry = malloc ( sizeof(Node) ) ;
+	  newEntry->next = NULL ;
+
+      // we add the new entry to the end of the list
+      // for this, we have to find the end of the list
+	  if ( currentNode == NULL )
+	     // list is empty
+		 list = newEntry ;
+	  else
+	  {
+         while ( currentNode->next != NULL ) currentNode = currentNode->next ;
+		 // we moved currentNode to the last node in the list
+		 currentNode->next = newEntry ;
+	  }
+   }
+     
+}
+</pre>
+
+<p>Find further information about linked lists here:</p>
+<ul>
+<li><a href="http://www.cprogramming.com/tutorial/c/lesson15.html">http://www.cprogramming.com/tutorial/c/lesson15.html</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Linked_list">http://en.wikipedia.org/wiki/Linked_list</a></li>
+<li><a href="http://cslibrary.stanford.edu/103/LinkedListBasics.pdf">http://cslibrary.stanford.edu/103/LinkedListBasics.pdf</a></li>
+</ul>
+
+<h4>Exercise 3.4.1 ArrayList</h4>
+
+<p>Implement a set of functions to manage an ArrayList.</p>
+<ul>
+<li>Node * add ( ArrayList * list, void * payload )</li>
+<li>Node * insert ( ArrayList * list, void * payload, int index )</li>
+<li>Node * delete ( ArrayList * list, int index )</li>
+<li>Node * get ( ArrayList * list, int index )</li>
+<li>int length ( ArrayList * list )</li>
+</ul>
+<p>Assume two data structures: (a) a header, containing the pointers 'first' and 'last',
+pointing to the first and last node of the list, and (b) the node, containing a pointer
+'next' and some payload pointer</p>
+<p>Start with the header arraylist.h for this function library</p>
+
+<pre>
+#ifndef ARRAYLIST_H
+#define ARRAYLIST_H
+
+typedef struct node {
+   void * data ;
+   struct node * next ;
+} Node ;
+
+typedef struct header {
+   Node * first ;
+   Node * last ;
+} ArrayList ;
+
+ArrayList * create() ;
+Node * add ( ArrayList *, void * ) ;
+// ... etc ...
+// for you to complete
+#endif
+</pre>
+
+<p>Implement arraylist.c. Create a makefile for compilation</p>
+
+<p>When the arraylist is created, only the list header exists, it has to be dynamically
+allocated in function create()</p>
+
+
+<h2>Exercise 3.5 Dispatcher</h2>
+
+<p>Implement a simple process dispatcher. What is the role of a dispatcher in an
+operating system? Look up information about dispatching in the lecture slides.
+A dispatcher dispatches processes to the CPU. There can only be one process in
+execution (state "Running"), all other process have to wait in a Ready queue.
+A process will execute for a set time (the time quantum), after which a
+context switch to another process occurs.</p>
+
+<p>We assume that the dispatcher has a Ready
+queue, where processes are added. The dispatcher runs in a loop, where each iteration
+is regarded as a time tick (you can either let the dispatch loop run indefinitely or
+specify a maximum number of of ticks for the
+program to iterate; programs can be terminated with CTRL-C). The dispatcher knows a time quantum, which is the number of ticks,
+after which a process has to be interrupted and a context switch has to occur.</p>
+
+<p>At each time tick, the dispatcher performs the following
+actions:</p>
+<ul>
+<li>checks whether a process has arrived, which has to be added to the end of the ready queue</li>
+<li>whether the currently running process (which is taken off the ready queue) has
+consumed its time quantum, resulting in this process being added to the end of the ready
+queue, and the first process in the ready queue taken off the queue</li>
+</ul>
+
+<p>A process is represented by a process control
+block, which is a structure that may contain a process ID, the arrival time
+(the number of ticks after which it is created) and its running time (number of
+ticks). When a process arrives, this data structure has to be created and
+added to the ready queue</p>
+
+<p>Use the array list from the previous exercise to implement the ready queue. Remenber
+that we implemented a node as a data structure that may point to a payload - in this
+case, it would be the PCB.
+Use a variable 'runningProcess' that points to the PCB of the currently running
+process. In order to simulate the arrival of processes, you have to feed in some
+data to this program - this can be done via a hard-coded table, e.g.:
+
+<pre>
+typedef struct runentry {
+   int ID ;
+   int arriveAfterTick ;
+   int maxTicks ;
+} SimEntry ;
+
+SimEntry simulation[] = {
+   { 0, 0, 100 },
+   { 1, 0, 100 },
+   { 2, 0, 100 },
+   { 3, 0, 100 },
+   { 4, 0, 100 }
+} ;
+</pre>
+
+<p>Change the values of arrival and maxTicks. Add more simulation entries. You can also read in a file containing this information.
+(You can also change the setup, e.g. randomize arrival and running time)</p>
+<p>Start with the header file process.h to declare the PCB. Write the main application
+dispatcher.c that includes 'process.h' and 'arraylist.h'</p>
+
+
+
+
+
+<!-- ===================================================================================================
+
+This exercise will show you how you can overlay a character (byte) array with a structure to
+allow the management of data under different perspectives. It also demonstrates some
+limited pointer arithmetics.
+
+<h4>Example 3.2</h4>
+<p>Consider the following example:</p>
+
+
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+
+#define BUFFERSIZE 53
+#define BYTE unsigned char
+
+// we could also use typedef unsigned char BYTE
+
+typedef struct dbEntry {
+   int key ;
+   char data[32] ;
+} DBEntry ;
+
+int main()
+{
+   BYTE buffer[BUFFERSIZE] ;
+   DBEntry * myData = NULL ;
+
+   // initialize buffer, set all elements to 0
+   for ( int i = 0; i < BUFFERSIZE; i++) buffer[i] = '\0' ;
+
+   // we write some initial string into buffer:
+   char * name = "Your name goes here";
+   strcpy ( buffer, name ) ;
+
+   // we use buffer as memory for DBEntry
+   // we assign a memory address to 'myData' that is
+   // the address of buffer + strlen(name) + 1
+   // with that, we assign a value to myData that is an address
+   // to a memory location
+   // within the byte array 'buffer' that is located after
+   // the '\0' of name:
+
+   myData = (DBEntry *)(buffer + strlen(name) + 1) ;
+
+   // we print out various sizes   
+   
+   printf ( "Length of name = %d\n", strlen(name)) ;
+   printf ( "Size of DBEntry = %d\n", sizeof(DBEntry)) ;
+
+   // we can now assign values to the elements of DBEntry
+   // as DBEntry points to a location somewhere in the
+   // middle of 'buffer', these values are stored in
+   // this array
+
+   myData->key = 100 ;
+   strcpy (  myData->data, "This is some data" ) ;
+
+   // what is now stored in buffer ?
+   
+   printf ( "Name : %s\n", buffer ) ;
+   printf ( "Key  : %d\n", myData->key ) ;
+   printf ( "Data : %s\n", myData->data ) ;
+   
+}
+</pre>
+
+<p>This is an example how different data structures can share an underlying memory
+area.</p>
+<p>The expression 'myData = (DBEntry *)(buffer + strlen(name) + 1)' assigns an address value
+to pointer variable 'myData'. This address points to a location within
+buffer array. The first couple of bytes are occupied by the string we added first, therefore,
+we move the pointer 'myData' after this string.</p>
+<p>We calculate: (a) the start address of buffer, (b) plus the length of the string
+situated at the beginning of buffer, (c) plus one for the '\0' at the end of the first string. This
+is position in buffer, where we now want to put information by using the struct DBEntry. Finally,
+we have to use the cast '(DBEntry *)' to declare that this is now a pointer to a DBEntry structure.
+</p>
+<p>We can now use 'myData' to add content to the array 'buffer'. The content of this structure is
+printed out with the three printf() statements. As myData maps directly into 'buffer', we can also
+use pointer arithmetics to show the same content in a different way:</p>
+
+<pre>
+   // this is the same printout, just accessing the values
+   // with pointers and type casting in 'buffer'
+
+   printf ( "Name : %s\n", buffer ) ;   
+   printf ( "Key  : %d\n", (int)(*(buffer + strlen(name) + 1)) ) ;
+   printf ( "Data : %s\n", buffer + strlen(name) + 1 + sizeof(int) ) ;
+</pre>
+
+<p>The expression '(int)(*(buffer + strlen(name) + 1))', retrieving an integer
+(4 bytes, according to cast (int)) from a location in 'buffer', is the same
+value that is also accessible via 'myData->key'</p>
+<p>How do we see the complete content of 'buffer? Let's try to print it out:</p>
+
+<pre>
+   for ( int i = 0; i < BUFFERSIZE; i++) fputc (  buffer[i], stdout) ;
+   printf("\n") ;
+
+   for ( int i = 0; i < BUFFERSIZE; i++) printf ( "%c", buffer[i]) ;
+   printf("\n") ;
+</pre>
+
+<h4>Exercise 3.1 Hexdump</h4>
+
+<p>To get a better picture, a so-called hex dump of this memory would give more
+insight. Try to implement such function hexdump(): </p>
+<ul>
+<li>void hexdump ( void * address, int length )
+</ul>
+<p>The function hexdump takes a pointer of type 'void' (can take any type) and a length. It
+should produce the following output, similar to the output produced by the Unix command 'hexdump -C':</p>
+<pre>
+0000 59 6f 75 72 20 6e 61 6d 65 20 67 6f 65 73 20 68 Your name goes h
+0010 65 72 65 00 64 00 00 00 54 68 69 73 20 69 73 20 ere.d...This is 
+0020 73 6f 6d 65 20 64 61 74 61 00 00 00 00 00 00 00 some data.......
+0030 00 00 00 00 00                                  .....           
+</pre>
+
+<p>Note the four bytes '64 00 00 00' in line 2: they represent the integer
+'myData->key', where hexadecimal 64 corresponds to 100. The byte sequence
+is reversed, this is according to the fact that Intel processors use
+"little-endian" format, opposite to the "big-endian" format we use
+in everyday life. (see <a href="http://en.wikipedia.org/wiki/Endianness">Wikipedia</a> for more information)</p>
+
+<p>Start with creating the header file hexdump.h, which exposes the function prototype:</p>
+<pre>
+#ifndef HEXDUMP_H
+#define HEXDUMP_H
+
+int hexdump ( void *, int ) ;
+
+#endif
+</pre>
+<p>You may get inspirations for your implementation <a href="practicals/abdn.only/Practical02/hexdump.c">here</a></p>
+
+<p>Finally, we can make buffer persistent and write it out to a file</p>
+<pre>
+   FILE * fp = fopen ( "testfile", "w" ) ;
+   if ( fwrite ( buffer, sizeof(buffer), 1, fp ) < 0 )
+      fprintf ( stderr, "cannot write to file\n" ) ;
+   fclose(fp) ;
+</pre>
+
+<p>You can now use the Unix command 'hexdump -C testfile' to show a hexdump of this file</p>
+
+<p>The completed code is the following:</p>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include "hexdump.h"
+
+#define BUFFERSIZE 53
+#define BYTE unsigned char
+
+typedef struct dbEntry {
+   int key ;
+   char data[32] ;
+} DBEntry ;
+
+int main()
+{
+   BYTE buffer[BUFFERSIZE] ;
+   DBEntry * myData = NULL ;
+
+   // initialize buffer, set all elements to 0
+   for ( int i = 0; i < BUFFERSIZE; i++) buffer[i] = '\0' ;
+
+   // we write some initial string into buffer:
+   char * name = "Your name goes here";
+   strcpy ( buffer, name ) ;
+
+   // we use buffer as memory for DBEntry
+
+   myData = (DBEntry *)(buffer + strlen(name) + 1) ;
+
+   // we print out various sizes   
+   
+   printf ( "Length of name = %d\n", strlen(name)) ;
+   printf ( "Size of DBEntry = %d\n", sizeof(DBEntry)) ;
+
+
+   myData->key = 100 ;
+   strcpy (  myData->data, "This is some data" ) ;
+
+   // what is now stored in buffer ?
+   
+   printf ( "Name : %s\n", buffer ) ;
+   printf ( "Key  : %d\n", myData->key ) ;
+   printf ( "Data : %s\n", myData->data ) ;
+   
+   // this is the same printout, just accessing the values of DBEntry
+   // with pointers and type casting in 'buffer'
+
+   printf ( "Name : %s\n", buffer ) ;   
+   printf ( "Key  : %d\n", (int)(*(buffer + strlen(name) + 1)) ) ;
+   printf ( "Data : %s\n", buffer + strlen(name) + 1 + sizeof(int) ) ;
+   
+   printf ("Hexdump :\n") ;
+   hexdump( buffer, BUFFERSIZE ) ;
+   
+   
+   FILE * fp = fopen ( "testfile", "w" ) ;
+   if ( fwrite ( buffer, sizeof(buffer), 1, fp ) < 0 )
+      fprintf ( stderr, "cannot write to file\n" ) ;
+   fclose(fp) ;
+}
+</pre>
+
+<h4>Optional Exercise 3.2 Using Union</h4>
+
+<p>Implement a version of this program that uses a union to unify the buffer with the
+DBEntry structure.</p>
+
+<h3>Dynamic Allocation with <code>malloc</code></h3>
+
+For the dynamic allocation of memory from the heap (a segment in the process address space,
+please look this up in lectures slides and in books recommended), the system
+call 'malloc()' (in its various forms) is used. The call malloc(int size) requires
+the specification the number of bytes of memory to be allocated. The function returns
+a pointer to the memory allocated:
+
+<pre>
+void *malloc ( size_t number_of_bytes )
+</pre>
+
+<p>The function malloc() returns a pointer of type <code>void *</code>, pointing to the
+start of this memory area. If memory cannot be allocated, a <code>NULL</code> pointer
+is returned.</p>
+<p>As a pointer of type <code>void *</code> is returned, it can be converted to any type.
+The<code>size_t</code> argument type is defined in <code>stdlib.h</code> and is an unsigned type
+(find this header file on your system and look it up).</p>
+<p>Usually, memory is allocated for a particular data type. This can be <code>char</code>
+or <code>int</code> etc., but usually, we allocate memory for <code>struct</code> constructs.</p>
+
+<p>Examples:</p>
+<pre>
+char *pointer_dynamic_char_array = NULL ;
+pointer_dynamic_char_array = malloc(100);
+</pre>
+
+<p>This allocates exactly 100 bytes for this character array. In the next example,
+we use <code>sizeof()</code>, the usual form to allocate memory:</p>
+
+<pre>
+int *pointer_integer_array = NULL ;
+pointer_integer_array = malloc(100 * sizeof(int));
+pointer_integer_array = malloc(100 * sizeof(*pointer_integer_array)) ;
+pointer_integer_array = (int *) malloc (100 * sizeof(int)) ;
+</pre>
+
+<p>The previous example shows three forms of allocating memory. The first allocates
+100 times sizeof(int). The second allocates memory 100 times of a size according to
+the type of the <code>pointer pointer_integer_array</code>. The third form adds an extra type cast in front
+of the malloc to inform the compiler explicitly that this is a correct assignment.
+(the variants can also be combined).</p>
+
+<h4>Example 3.3</h4>
+<p>The reason for the next exercise is that you will encounter these kinds of constructs
+in C programs. In particular, the increment and decrement operators '++' and '--' are
+frequently used to move pointers across memory. A good understanding of the mechanisms
+how to manipulate pointers, e.g. using a temporary pointer "char * tempPtr", which points to the
+beginning of an array, to traverse this array by incrementing it, is important.</p>
+<p>Please note: <code>tempPtr++</code> is the same as <code>tempPtr = tempPtr + 1</code></p>
+
+<p>Accessing dynamically allocated memory can be done in two different fashions: via pointer arithmetic or as you would access elements of an array:</p>
+
+<pre>
+int *int_array = NULL ;
+int *iptr = NULL ;
+
+int_array = malloc(100 * sizeof(*int_array)) ; // allocate array of 100 integers
+
+// the array method
+
+int_array[0] = 100 ;
+int_array[1] = 99 ;
+int_array[2] = 98 ;
+// etc
+
+// or with pointer arithmetic
+iptr = int_array ;
+
+*iptr = 100 ;     // assign the value 100 to first array element
+iptr ++ ;         // increment pointer, pointer does not point to beginning
+                  // array anymore
+*iptr = 99 ;
+iptr ++ ;
+// etc
+
+// we can also use a for loop to initialise all array elements with a value
+
+iptr = int_array;  // we let iptr point to the first element of int_array
+for ( int i = 0; i < 100; i++ ) *iptr++ = 100 - i;
+
+// we can print out this array in the array or pointer fashion
+iptr = int_array;
+printf ( "List[0] = %d\n", int_array[0] ) ;
+for ( int i = 0; i < 100; i++ )printf ( "List[0] = %d\n", *iptr++ ) ;
+</pre>
+
+<p>Test your knowledge:</p>
+<ul>
+<li>Do you know what '*iptr++ = 100 - i;' is doing ? </li>
+<li>Do you know what 'for ( int i = 0; i < 100; i++ )printf ( "List[0] = %d\n", *iptr++ )' is doing ?</li>
+<li>Do you know the difference between the expressions '++i' and "i++'? What does (*iptr)++ do, compared
+to *(iptr++) ?</li>
+</ul>
+<p>If you have difficulty understanding these very efficiently written C code, please
+approach the practical demonstrator for explanation.</p>
+
+<p>Observations: using the array method does not change the pointer <code>int_array</code>, it
+always points to the beginning of the dynamically allocated array. Using pointer
+arithmetic, we therefore use a temporary pointer <code>iptr</code>, as we change its
+value. Its value is a memory address within the memory area dynamically allocated.</p>
+
+<h3>Free</h3>
+C does not provide any automated garbage collection, like Java. A program, therefore,
+has to be carefully designed to free allocated memory. Otherwise, the heap is cloaked
+with unused memory allocations. This phenomenon is called a memory leak, one of the
+reasons why computers seem to run out of memory over time, if the operating system
+is not implemented carefully.
+
+<h3>Calloc and Realloc</h3>
+Look for explanations on the web for <code>calloc()</code> and <code>realloc()</code>.
+
+<h4>Exercise 3.3 Arrays and Pointers</h4>
+
+Go back to example 3.1 and implement a version that allows to fill data records not only for the
+first element in the list, but for all elements.
+
+
+
+<h3>Linked Lists</h3>
+
+Dynamic list structures are created as a chain of list elements, where each element is represented by a structure that contains information how to find the next list element. In Java, data structures, such as ArrayList or Hashmap, take lists of
+elements and can be dynamically extended.
+
+<p>The basic element of a linked list is a node. It contains, beside some payload, a pointer variable that points
+a next node:</p>
+
+<pre>
+struct node {
+   int someValue ;
+   struct node * next :  // this is the important bit
+} ;
+</pre>
+
+<p>This structure contains everything we need to create a dynamic list: the “payload”, which is the information we want to put into the list (here an integer), and variable next that allows this node to point to a next one.</p>
+
+<pre>
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+
+struct node {
+   int someValue ;
+   struct node * next :  // this is the important bit
+} ;
+
+typedef struct node Node ;
+
+int main()
+{
+   Node * list = NULL ;     // this is the start of the list, its “head”
+   Node * newEntry = NULL ; 
+
+   Node * currentNode = list ;
+   for ( int i = 0; i < 10; i ++ )
+   {
+      // we allocate memory of a size that can accommodate a node
+      newEntry = malloc ( sizeof(Node) ) ;
+	  newEntry->next = NULL ;
+
+      // we add the new entry to the end of the list
+      // for this, we have to find the end of the list
+	  if ( currentNode == NULL )
+	     // list is empty
+		 list = newEntry ;
+	  else
+	  {
+         while ( currentNode->next != NULL ) currentNode = currentNode->next ;
+		 // we moved currentNode to the last node in the list
+		 currentNode->next = newEntry ;
+	  }
+   }
+     
+}
+</pre>
+
+<p>Find further information about linked lists here:</p>
+<ul>
+<li><a href="http://www.cprogramming.com/tutorial/c/lesson15.html">http://www.cprogramming.com/tutorial/c/lesson15.html</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Linked_list">http://en.wikipedia.org/wiki/Linked_list</a></li>
+<li><a href="http://cslibrary.stanford.edu/103/LinkedListBasics.pdf">http://cslibrary.stanford.edu/103/LinkedListBasics.pdf</a></li>
+</ul>
+
+<h4>Exercise 3.4 ArrayList</h4>
+
+<p>Implement a set of functions to manage an ArrayList.</p>
+<ul>
+<li>Node * add ( ArrayList * list, void * payload )</li>
+<li>Node * insert ( ArrayList * list, void * payload, int index )</li>
+<li>Node * delete ( ArrayList * list, int index )</li>
+<li>Node * get ( ArrayList * list, int index )</li>
+<li>int length ( ArrayList * list )</li>
+</ul>
+<p>Assume two data structures: (a) a header, containing the pointers 'first' and 'last',
+pointing to the first and last node of the list, and (b) the node, containing a pointer
+'next' and some payload pointer</p>
+<p>Start with the header arraylist.h for this function library</p>
+
+<pre>
+#ifndef ARRAYLIST_H
+#define ARRAYLIST_H
+
+typedef struct node {
+   void * data ;
+   struct node * next ;
+} Node ;
+
+typedef struct header {
+   Node * first ;
+   Node * last ;
+} ArrayList ;
+
+ArrayList * create() ;
+Node * add ( ArrayList *, void * ) ;
+// ... etc ...
+// for you to complete
+#endif
+</pre>
+
+<p>Implement arraylist.c. Create a makefile for compilation</p>
+
+<p>When the arraylist is created, only the list header exists, it has to be dynamically
+allocated in function create()</p>
+
+
+<h4>Exercise 3.5 Dispatcher</h4>
+
+<p>Implement a simple process dispatcher. What is the role of a dispatcher in an
+operating system? Look up information about dispatching in the lecture slides.
+A dispatcher dispatches processes to the CPU. There can only be one process in
+execution (state "Running"), all other process have to wait in a Ready queue.
+A process will execute for a set time (the time quantum), after which a
+context switch to another process occurs.</p>
+
+<p>We assume that the dispatcher has a Ready
+queue, where processes are added. The dispatcher runs in a loop, where each iteration
+is regarded as a time tick (you can either let the dispatch loop run indefinitely or
+specify a maximum number of of ticks for the
+program to iterate; programs can be terminated with CTRL-C). The dispatcher knows a time quantum, which is the number of ticks,
+after which a process has to be interrupted and a context switch has to occur.</p>
+
+<p>At each time tick, the dispatcher performs the following
+actions:</p>
+<ul>
+<li>checks whether a process has arrived, which has to be added to the end of the ready queue</li>
+<li>whether the currently running process (which is taken off the ready queue) has
+consumed its time quantum, resulting in this process being added to the end of the ready
+queue, and the first process in the ready queue taken off the queue</li>
+</ul>
+
+<p>A process is represented by a process control
+block, which is a structure that may contain a process ID, the arrival time
+(the number of ticks after which it is created) and its running time (number of
+ticks). When a process arrives, this data structure has to be created and
+added to the ready queue</p>
+
+<p>Use the array list from the previous exercise to implement the ready queue. Remenber
+that we implemented a node as a data structure that may point to a payload - in this
+case, it would be the PCB.
+Use a variable 'runningProcess' that points to the PCB of the currently running
+process. In order to simulate the arrival of processes, you have to feed in some
+data to this program - this can be done via a hard-coded table, e.g.:
+
+<pre>
+typedef struct runentry {
+   int ID ;
+   int arriveAfterTick ;
+   int maxTicks ;
+} SimEntry ;
+
+SimEntry simulation[] = {
+   { 0, 0, 100 },
+   { 1, 0, 100 },
+   { 2, 0, 100 },
+   { 3, 0, 100 },
+   { 4, 0, 100 }
+} ;
+</pre>
+
+<p>Change the values of arrival and maxTicks. Add more simulation entries. You can also read in a file containing this information.
+(You can also change the setup, e.g. randomize arrival and running time)</p>
+<p>Start with the header file process.h to declare the PCB. Write the main application
+dispatcher.c that includes 'process.h' and 'arraylist.h'</p>
+
+
+-->
+
+<div id="footer"> 
+<p>You can obtain a <a href="/cgi-bin/betsie.pl">text only version</a> 
+of this page by following the link.</p>
+<p>
+<a href="">Home</a> 
+| <a href="lectures/">Lectures</a> 
+| <a href="practicals/">Practicals</a> 
+| <a href="assessment/">Assessment</a> 
+| <a href="information/">Information</a></p>
+<p>
+<a href="http://www.abdn.ac.uk/">
+<img src="http://www.csd.abdn.ac.uk/images/university/logo.gif" alt="University of Aberdeen logo" />
+</a></p>
+</div>
+
+
+</body>
+</HTML>
